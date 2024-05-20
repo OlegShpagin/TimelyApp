@@ -18,12 +18,11 @@ import com.google.android.material.chip.ChipGroup
 import kotlinx.android.synthetic.main.activity_create_alarm.*
 import java.util.*
 
-
 class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener {
 
     lateinit var AM_PM: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        //get sharedprefs of switch(our switch from settings)
         val sharedPrefs = getSharedPreferences("pref", Context.MODE_PRIVATE)
         val darkModeIsActivated = sharedPrefs.getBoolean("DARK MODE", false)
         if (darkModeIsActivated) {
@@ -32,51 +31,37 @@ class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeL
             setTheme(R.style.WhiteMode)
         }
         super.onCreate(savedInstanceState)
-        overridePendingTransition(R.anim.fade_in,R.anim.fadeout)
+        overridePendingTransition(R.anim.fade_in, R.anim.fadeout)
         setContentView(R.layout.activity_create_alarm)
 
         addDayChips()
 
-        //set title
-        title = "Schedule Alarm"
+        title = "Создание будильника"
 
         btn_choose_time.setOnClickListener {
-            val calendar=Calendar.getInstance()
+            val calendar = Calendar.getInstance()
             TimePickerDialog(this, { _, hour, min ->
                 selectedHour = hour
                 selectedMin = min
 
                 var hourString = selectedHour.toString()
-                var minString =  selectedMin.toString()
-                if ( selectedHour > 12) {
-                    hourString = ( selectedHour - 12).toString()
-                    AM_PM = "PM"
-                } else {
-                    AM_PM = "AM"
-                }
+                var minString = selectedMin.toString()
 
                 if (selectedMin < 10) {
                     minString = "0$selectedMin"
                 }
-                val formattedTime = "$hourString:$minString $AM_PM"
-
-                timeTV.text=formattedTime
-            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false).show()
-
-
+                val formattedTime = "$hourString:$minString"
+                timeTV.text = formattedTime
+            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
         }
 
-        //our set alarm button from create alarm xml
         btn_set_alarm.setOnClickListener {
-            if(TextUtils.isEmpty(timeTV.text)){
-                displayFailureToast(this,"please select a time")
+            if (TextUtils.isEmpty(timeTV.text)) {
+                displayFailureToast(this, "Пожалуйста, выберите время")
                 return@setOnClickListener
             }
-
             sendDataToAlarmFragment()
-
         }
-
     }
 
     private fun sendDataToAlarmFragment() {
@@ -87,10 +72,10 @@ class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeL
 
         when (selectedDays.size) {
             0 -> {
-                repeatdays = "Alarm"
+                repeatdays = "Будильник"
             }
             1 -> selectedDays.forEachIndexed { _, day ->
-                repeatdays = "Alarm, $day"
+                repeatdays = "Будильник, $day"
             }
             in 2..6 -> {
                 selectedDays.forEachIndexed { _, days ->
@@ -99,7 +84,7 @@ class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeL
                     repeatdays = builder.toString()
                 }
             }
-            else -> repeatdays = "Every day"
+            else -> repeatdays = "Каждый день"
         }
 
         val intent = Intent()
@@ -110,38 +95,45 @@ class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeL
         finish()
     }
 
-
     companion object {
         var selectedDays = mutableListOf<String>()
         private var selectedHour = 0
         private var selectedMin = 0
 
-        fun startAlarm(alarmId:Int,context: Context) {
-            selectedDays.forEachIndexed { _, day ->
-                /**
-                 * //Sunday's value is 1 and so index + 1
-                 * @see Calendar.SUNDAY
-                 */
-                val indexOfDay = days.indexOf(day) + 1
+        fun startAlarm(alarmId: Int, context: Context) {
+            val currentTime = Calendar.getInstance()
 
+            selectedDays.forEachIndexed { _, day ->
+                val indexOfDay = days.indexOf(day) + 1
 
                 val calendar = Calendar.getInstance().apply {
                     set(Calendar.DAY_OF_WEEK, indexOfDay)
                     set(Calendar.HOUR_OF_DAY, selectedHour)
                     set(Calendar.MINUTE, selectedMin)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
                 }
-                if (calendar.before(Calendar.getInstance())) {
-                    calendar.add(Calendar.DATE, 7)
+
+                // Если текущее время меньше установленного времени
+                if (currentTime.timeInMillis < calendar.timeInMillis) {
+                    // Если будильник установлен на будущий день недели
+                    if (calendar.get(Calendar.DAY_OF_WEEK) != currentTime.get(Calendar.DAY_OF_WEEK)) {
+                        calendar.set(Calendar.DAY_OF_WEEK, indexOfDay)
+                    }
+                } else {
+                    // Если текущее время больше установленного времени
+                    // или установлено на текущий день и текущее время больше установленного
+                    // установить на следующую неделю в этот же день
+                    calendar.add(Calendar.WEEK_OF_YEAR, 1)
                 }
 
                 val intent = Intent(context, AlarmReceiver::class.java)
-                val pendingIntent =
-                    PendingIntent.getBroadcast(context, alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+                val pendingIntent = PendingIntent.getBroadcast(context, alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT)
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                 alarmManager.setInexactRepeating(
                     AlarmManager.RTC_WAKEUP,
                     calendar.timeInMillis,
-                    7 * 24 * 60 * 60 * 1000,
+                    AlarmManager.INTERVAL_DAY * 7,
                     pendingIntent
                 )
             }
@@ -150,14 +142,17 @@ class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeL
                 val calendar = Calendar.getInstance().apply {
                     set(Calendar.HOUR_OF_DAY, selectedHour)
                     set(Calendar.MINUTE, selectedMin)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
                 }
-                if (calendar.before(Calendar.getInstance())) {
+
+                // Если установленное время уже прошло, установить на следующий день
+                if (calendar.timeInMillis <= currentTime.timeInMillis) {
                     calendar.add(Calendar.DATE, 1)
                 }
 
                 val intent = Intent(context, AlarmReceiver::class.java)
-                val pendingIntent =
-                    PendingIntent.getBroadcast(context, alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+                val pendingIntent = PendingIntent.getBroadcast(context, alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT)
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                 alarmManager.setExact(
                     AlarmManager.RTC_WAKEUP,
@@ -165,15 +160,13 @@ class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeL
                     pendingIntent
                 )
             }
-
         }
 
-        //cancel alarm function
+        // cancel alarm function
         fun cancelAlarm(id: Int, context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, AlarmReceiver::class.java)
-            val pendingIntent =
-                PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+            val pendingIntent = PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT)
             alarmManager.cancel(pendingIntent)
         }
 
@@ -181,20 +174,19 @@ class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeL
         const val ALARM_IsON = "ALARM_IsON"
         const val ALARM_REPEAT_DAYS = "ALARM_REPEAT_DAYS"
 
-        //list of repeat days
+        // list of repeat days
         private val days by lazy {
             listOf(
-                "Every Sunday",
-                "Every Monday",
-                "Every Tuesday",
-                "Every Wednesday",
-                "Every Thursday",
-                "Every Friday",
-                "Every Saturday"
+                "Каждое воскресенье",
+                "Каждый понедельник",
+                "Каждый вторник",
+                "Каждую среду",
+                "Каждый четверг",
+                "Каждую пятницу",
+                "Каждую субботу"
             )
         }
     }
-
 
 
     private fun addDayChips() {
@@ -210,8 +202,7 @@ class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeL
     }
 
     private fun ChipGroup.addChip(chipInitializer: Chip.() -> Unit) {
-        val dayChip =
-            layoutInflater.inflate(R.layout.layout_day_chip, null).findViewById<Chip>(R.id.chip_day)
+        val dayChip = layoutInflater.inflate(R.layout.layout_day_chip, null).findViewById<Chip>(R.id.chip_day)
         dayChip.setChipBackgroundColorResource(R.color.chipColor)
 
         val chip = dayChip.apply {
@@ -229,9 +220,4 @@ class CreateAlarmActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeL
             }
         }
     }
-
-
-
-
 }
-

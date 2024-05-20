@@ -47,10 +47,10 @@ class MainActivity : AppCompatActivity(), ItemAdapter.ItemSelectorInterface{
         }
 
         fragment1 = AlarmFragment()
-        fragment2 = SettingsFragment()
+//        fragment2 = SettingsFragment()
         active = fragment1
         fm = supportFragmentManager
-        fm!!.beginTransaction().add(R.id.fragmentcontainer, fragment2!!, "2").hide(fragment2!!).commit()
+//        fm!!.beginTransaction().add(R.id.fragmentcontainer, fragment2!!, "2").hide(fragment2!!).commit()
         fm!!.beginTransaction().add(R.id.fragmentcontainer, fragment1!!, "1").commit()
         customBottomBar = CustomBottomBar(
             this,
@@ -77,19 +77,19 @@ class MainActivity : AppCompatActivity(), ItemAdapter.ItemSelectorInterface{
         typeArray.recycle()
         val alarmHome = CustomBottomItem(
             ALARM_HOME,
-            R.drawable.ic_alarm, getString(R.string.Alarms),
+            R.drawable.ic_alarm, getString(R.string.app_name),
             getString(R.color.colorItem1Background), textColor
         )
 
-        val settings = CustomBottomItem(
-            SETTINGS, R.drawable.ic_settings,
-            getString(R.string.settings), getString(R.color.colorItem2Background),
-            textColor
-        )
+//        val settings = CustomBottomItem(
+//            SETTINGS, R.drawable.ic_settings,
+//            getString(R.string.settings), getString(R.color.colorItem2Background),
+//            textColor
+//        )
 
 
         customBottomBar!!.addItem(alarmHome)
-        customBottomBar!!.addItem(settings)
+//        customBottomBar!!.addItem(settings)
     }
 
     override fun itemSelect(selectedID: Int) {
@@ -104,15 +104,15 @@ class MainActivity : AppCompatActivity(), ItemAdapter.ItemSelectorInterface{
             }
 
         }
-        else if(selectedID==(SETTINGS)){
-            fm!!.beginTransaction().hide(active!!).show(fragment2!!).commit()
-            active = fragment2
-            try {
-                fragment2!!.onStart()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+//        else if(selectedID==(SETTINGS)){
+//            fm!!.beginTransaction().hide(active!!).show(fragment2!!).commit()
+//            active = fragment2
+//            try {
+//                fragment2!!.onStart()
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            }
+//        }
 
     }
 }

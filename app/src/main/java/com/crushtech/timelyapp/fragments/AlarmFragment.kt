@@ -97,7 +97,7 @@ class AlarmFragment : Fragment(), KodeinAware {
                     //notifies the recyclerview that an item was removed
                     adapter!!.notifyItemRemoved(adapterPosition)
 
-                    displaySuccessToast(requireContext(), "Alarm deleted")
+                    displaySuccessToast(requireContext(), "Будильник удален")
                 }
             }
 
@@ -128,7 +128,7 @@ class AlarmFragment : Fragment(), KodeinAware {
                         )
                     )
                     .addActionIcon(R.drawable.ic_delete_black_24dp)
-                    .addSwipeLeftLabel("delete")
+                    .addSwipeLeftLabel("Удалить")
                     .create()
                     .decorate()
                 super.onChildDraw(
@@ -161,9 +161,9 @@ class AlarmFragment : Fragment(), KodeinAware {
                 //insert the alarm into database using our viewmodel instance
                 viewModel!!.insert(alarm)
 
-                displaySuccessToast(requireContext(), "alarm created successfully")
+                displaySuccessToast(requireContext(), "Будильник установлен")
             } else {
-                displayFailureToast(requireContext(), "an error occurred")
+                displayFailureToast(requireContext(), "Ошибка!")
             }
         }
 
@@ -187,7 +187,7 @@ class AlarmFragment : Fragment(), KodeinAware {
 
 
     override fun onStart() {
-        (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.Alarms)
+        (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.app_name)
 
         super.onStart()
     }

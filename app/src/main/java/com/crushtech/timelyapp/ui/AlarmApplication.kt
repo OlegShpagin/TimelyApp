@@ -14,10 +14,10 @@ import org.kodein.di.generic.singleton
 class AlarmApplication():Application(),KodeinAware {
     override val kodein: Kodein= Kodein.lazy {
         import(androidXModule(this@AlarmApplication))
-        bind() from singleton { AlarmDatabase(instance()) }
-        bind() from singleton { AlarmRepository(instance()) }
-        bind() from provider {
-            AlarmViewModelFactory(instance())
+        bind() from this.singleton { AlarmDatabase(this.instance()) }
+        bind() from this.singleton { AlarmRepository(this.instance()) }
+        bind() from this.provider {
+            AlarmViewModelFactory(this.instance())
         }
     }
 
